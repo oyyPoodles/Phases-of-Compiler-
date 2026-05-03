@@ -1,0 +1,5 @@
+/* Resetting index.css as App.css handles the design system */
+body {
+  margin: 0;
+  padding: 0;
+}

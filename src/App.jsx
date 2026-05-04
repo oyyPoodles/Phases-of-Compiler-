@@ -23,11 +23,15 @@ const App = () => {
 `#include <stdio.h>
 
 int main() {
-  int base = 5 + 3 * 2;
-  int total = base + 10;
-  total = total - 4;
-  printf(total);
-  printf(base + total);
+  int marks = 75;
+  if(marks >= 90)
+    printf("Grade A");
+  else if(marks >= 75)
+    printf("Grade B");
+  else if(marks >= 50)
+    printf("Grade C");
+  else
+    printf("Fail");
   return 0;
 }`
   );
@@ -258,14 +262,14 @@ const PhaseVisualizer = ({ phase, sourceCode, setSourceCode }) => {
         <div className="code-editor-elegant" style={{ background: 'rgba(0,0,0,0.6)', borderStyle: 'dashed' }}>
            <pre style={{ color: 'var(--primary)', fontSize: '0.8rem', lineHeight: 1.8 }}>
 {`Program_Root
- ├─ Init: base
- │   └─ Op: ADD (5, MUL(3, 2))
- ├─ Init: total
- │   └─ Op: ADD (base, 10)
- ├─ Assign: total
- │   └─ Op: SUB (total, 4)
- └─ Call: printf(total)
- └─ Call: printf(ADD(base, total))`}
+ ├─ Decl: marks = 75
+ └─ If: (marks >= 90)
+     ├─ Then: printf("Grade A")
+     └─ Else: If: (marks >= 75)
+         ├─ Then: printf("Grade B")
+         └─ Else: If: (marks >= 50)
+             ├─ Then: printf("Grade C")
+             └─ Else: printf("Fail")`}
            </pre>
         </div>
       );
@@ -316,7 +320,7 @@ const PhaseVisualizer = ({ phase, sourceCode, setSourceCode }) => {
              </div>
              <div style={{ fontFamily: 'JetBrains Mono', fontSize: '1rem' }}>
                 <div style={{ opacity: 0.5 }}>$ run final_bin</div>
-                <div style={{ color: 'var(--accent)', margin: '0.5rem 0' }}>OUT: 1728</div>
+                <div style={{ color: 'var(--accent)', margin: '0.5rem 0' }}>OUT: Grade B</div>
                 <div style={{ color: '#10b981', fontSize: '0.7rem' }}>√ SUCCESS</div>
              </div>
           </div>

@@ -15,7 +15,7 @@ export const compileCode = (source) => {
     parts.forEach(p => {
       let type = "symbol";
       if (/^\d+$/.test(p)) type = "number";
-      else if (['int', 'printf', 'return'].includes(p)) type = "keyword";
+      else if (['int', 'if', 'else', 'printf', 'return'].includes(p)) type = "keyword";
       else if (/^\w+$/.test(p)) type = "identifier";
       tokens.push({ type, value: p });
     });
@@ -33,25 +33,23 @@ export const compileCode = (source) => {
         symbolTable.push({ name, type: "int", scope: "main", initialized: true });
         
         // Simple IR generation
-        if (name === 'base') {
-           ir.push("t1 = 3 * 2");
-           ir.push("t2 = 5 + t1");
-           ir.push(`base = t2`);
-        } else if (name === 'total') {
-           ir.push("t3 = base + 10");
-           ir.push(`total = t3`);
+        if (name === 'marks') {
+           ir.push("marks = 75");
         }
       }
+    } else if (line.includes('if')) {
+       const match = line.match(/if\s*\((.*)\)/);
+       if (match) ir.push(`if ${match[1]} goto L_NEXT`);
     } else if (line.includes('printf')) {
        ir.push(`print ${line.match(/\(([^)]+)\)/)?.[1] || 'result'}`);
     }
   });
 
-  // 3. Target Code (Stack VM)
-  asm.push("PUSH 5", "PUSH 3", "PUSH 2", "MUL", "ADD", "STORE 0 // base");
-  asm.push("LOAD 0", "PUSH 10", "ADD", "STORE 1 // total");
-  asm.push("LOAD 1", "PUSH 4", "SUB", "STORE 1");
-  asm.push("LOAD 1", "PRINT", "LOAD 0", "LOAD 1", "ADD", "PRINT", "HALT");
+  // 3. Target Code (Simplified selection logic)
+  asm.push("MOV [ebp-4], 75", "CMP [ebp-4], 90", "JL L1", "PUSH offset str_A", "CALL printf", "JMP L_END");
+  asm.push("L1: CMP [ebp-4], 75", "JL L2", "PUSH offset str_B", "CALL printf", "JMP L_END");
+  asm.push("L2: CMP [ebp-4], 50", "JL L3", "PUSH offset str_C", "CALL printf", "JMP L_END");
+  asm.push("L3: PUSH offset str_Fail", "CALL printf", "L_END: HALT");
 
   return {
     preprocessing: {
@@ -67,11 +65,11 @@ export const compileCode = (source) => {
     optimization: {
       before: ir.slice(0, 5),
       after: [
-        "base = 11 // precomputed",
-        "total = 21 // precomputed",
-        "total = 17 // reduced",
-        "print 17",
-        "print 28"
+        "marks = 75",
+        "goto L1 // marks < 90 is True",
+        "L1: goto L_PRINT_B // marks < 75 is False",
+        "L_PRINT_B: print \"Grade B\"",
+        "halt"
       ]
     },
     target: { asm }

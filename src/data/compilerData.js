@@ -10,8 +10,8 @@ export const compilerPhases = [
       "Validates language mode (C vs C++ syntax check)."
     ],
     visualData: {
-      source: `#include <stdio.h>\n\nint main() {\n  int base = 5 + 3 * 2;\n  int total = base + 10;\n  total = total - 4;\n  printf(total);\n  printf(base + total);\n  return 0;\n}`,
-      output: `int base = 5 + 3 * 2;\nint total = base + 10;\ntotal = total - 4;\nprintf(total);\nprintf(base + total);`
+      source: `#include <stdio.h>\n\nint main() {\n  int marks = 75;\n  if(marks >= 90)\n    printf("Grade A");\n  else if(marks >= 75)\n    printf("Grade B");\n  else if(marks >= 50)\n    printf("Grade C");\n  else\n    printf("Fail");\n  return 0;\n}`,
+      output: `int marks = 75;\nif(marks >= 90)\n  printf("Grade A");\nelse if(marks >= 75)\n  printf("Grade B");\nelse if(marks >= 50)\n  printf("Grade C");\nelse\n  printf("Fail");`
     },
     implementationCode: `// Preprocessing Logic
 const preprocess = (source) => {
@@ -31,36 +31,55 @@ const preprocess = (source) => {
     description: "The Scanner reads the stream of characters and groups them into meaningful sequences called Tokens.",
     details: [
       "Converts raw text into (Type, Value) pairs.",
-      "Identifies keywords (int, printf), identifiers (base, total), and literals (5, 3).",
-      "Handles whitespace and multi-character symbols like '+=' or '=='."
+      "Identifies keywords (if, else, int), identifiers (marks), and literals (75, 90).",
+      "Handles relational operators like '>=' and string literals."
     ],
     visualData: {
       tokens: [
         { type: "keyword", value: "int" },
-        { type: "identifier", value: "base" },
+        { type: "identifier", value: "marks" },
         { type: "symbol", value: "=" },
-        { type: "number", value: "5" },
-        { type: "symbol", value: "+" },
-        { type: "number", value: "3" },
-        { type: "symbol", value: "*" },
-        { type: "number", value: "2" },
+        { type: "number", value: "75" },
         { type: "symbol", value: ";" },
-        { type: "keyword", value: "int" },
-        { type: "identifier", value: "total" },
-        { type: "symbol", value: "=" },
-        { type: "identifier", value: "base" },
-        { type: "symbol", value: "+" },
-        { type: "number", value: "10" },
-        { type: "symbol", value: ";" },
-        { type: "identifier", value: "total" },
-        { type: "symbol", value: "=" },
-        { type: "identifier", value: "total" },
-        { type: "symbol", value: "-" },
-        { type: "number", value: "4" },
-        { type: "symbol", value: ";" },
+        { type: "keyword", value: "if" },
+        { type: "symbol", value: "(" },
+        { type: "identifier", value: "marks" },
+        { type: "operator", value: ">=" },
+        { type: "number", value: "90" },
+        { type: "symbol", value: ")" },
         { type: "keyword", value: "printf" },
         { type: "symbol", value: "(" },
-        { type: "identifier", value: "total" },
+        { type: "string", value: '"Grade A"' },
+        { type: "symbol", value: ")" },
+        { type: "symbol", value: ";" },
+        { type: "keyword", value: "else" },
+        { type: "keyword", value: "if" },
+        { type: "symbol", value: "(" },
+        { type: "identifier", value: "marks" },
+        { type: "operator", value: ">=" },
+        { type: "number", value: "75" },
+        { type: "symbol", value: ")" },
+        { type: "keyword", value: "printf" },
+        { type: "symbol", value: "(" },
+        { type: "string", value: '"Grade B"' },
+        { type: "symbol", value: ")" },
+        { type: "symbol", value: ";" },
+        { type: "keyword", value: "else" },
+        { type: "keyword", value: "if" },
+        { type: "symbol", value: "(" },
+        { type: "identifier", value: "marks" },
+        { type: "operator", value: ">=" },
+        { type: "number", value: "50" },
+        { type: "symbol", value: ")" },
+        { type: "keyword", value: "printf" },
+        { type: "symbol", value: "(" },
+        { type: "string", value: '"Grade C"' },
+        { type: "symbol", value: ")" },
+        { type: "symbol", value: ";" },
+        { type: "keyword", value: "else" },
+        { type: "keyword", value: "printf" },
+        { type: "symbol", value: "(" },
+        { type: "string", value: '"Fail"' },
         { type: "symbol", value: ")" },
         { type: "symbol", value: ";" }
       ]
@@ -72,14 +91,15 @@ const preprocess = (source) => {
 
 %%
 "int"       { return KEYWORD_INT; }
+"if"        { return KEYWORD_IF; }
+"else"      { return KEYWORD_ELSE; }
 "printf"    { return KEYWORD_PRINTF; }
-"return"    { return KEYWORD_RETURN; }
-[0-9]+      { yylval = atoi(yytext); return NUMBER; }
-[a-zA-Z_][a-zA-Z0-9_]* { yylval = strdup(yytext); return IDENTIFIER; }
-"="         { return SYMBOL_ASSIGN; }
-"+"         { return SYMBOL_PLUS; }
-"*"         { return SYMBOL_MUL; }
-";"         { return SYMBOL_SEMICOLON; }
+">="        { return OP_GE; }
+"<="        { return OP_LE; }
+"=="        { return OP_EQ; }
+[0-9]+      { yylval.num = atoi(yytext); return NUMBER; }
+[a-zA-Z_][a-zA-Z0-9_]* { yylval.id = strdup(yytext); return IDENTIFIER; }
+\"[^\"]*\"  { yylval.str = strdup(yytext); return STRING; }
 [ \\t\\n]    ; /* skip whitespace */
 .           { return yytext[0]; }
 %%`
@@ -89,9 +109,9 @@ const preprocess = (source) => {
     title: "Phase 2: Syntax Analysis",
     description: "The Parser checks if the tokens follow the grammar rules and builds an Abstract Syntax Tree (AST).",
     details: [
-      "Enforces operator precedence (e.g., * before +).",
-      "Groups tokens into logical expressions and statements.",
-      "Builds a hierarchical tree representing the program structure."
+      "Enforces selection statement structures (if-else if-else).",
+      "Groups tokens into logical expressions and relational comparisons.",
+      "Builds a hierarchical tree representing the nested conditional logic."
     ],
     visualData: {
       ast: {
@@ -99,49 +119,67 @@ const preprocess = (source) => {
         body: [
           {
             type: "VariableDeclaration",
-            id: "base",
-            init: {
+            id: "marks",
+            init: { type: "Literal", value: 75 }
+          },
+          {
+            type: "IfStatement",
+            test: {
               type: "BinaryExpression",
-              op: "+",
-              left: { type: "Literal", value: 5 },
-              right: {
+              op: ">=",
+              left: { type: "Identifier", name: "marks" },
+              right: { type: "Literal", value: 90 }
+            },
+            consequent: { type: "PrintStatement", value: "Grade A" },
+            alternate: {
+              type: "IfStatement",
+              test: {
                 type: "BinaryExpression",
-                op: "*",
-                left: { type: "Literal", value: 3 },
-                right: { type: "Literal", value: 2 }
+                op: ">=",
+                left: { type: "Identifier", name: "marks" },
+                right: { type: "Literal", value: 75 }
+              },
+              consequent: { type: "PrintStatement", value: "Grade B" },
+              alternate: {
+                type: "IfStatement",
+                test: {
+                  type: "BinaryExpression",
+                  op: ">=",
+                  left: { type: "Identifier", name: "marks" },
+                  right: { type: "Literal", value: 50 }
+                },
+                consequent: { type: "PrintStatement", value: "Grade C" },
+                alternate: { type: "PrintStatement", value: "Fail" }
               }
             }
           }
-          // ... rest simplified for UI
         ]
       }
     },
     implementationCode: `/* Syntax Specification (parser.y) */
-%token KEYWORD_INT KEYWORD_PRINTF NUMBER IDENTIFIER
-%left SYMBOL_PLUS SYMBOL_MINUS
-%left SYMBOL_MUL SYMBOL_DIV
+%token KEYWORD_INT KEYWORD_IF KEYWORD_ELSE KEYWORD_PRINTF NUMBER IDENTIFIER STRING OP_GE
+%nonassoc LOWER_THAN_ELSE
+%nonassoc KEYWORD_ELSE
 
 %%
-program:
-    statements
-    ;
+program: statements ;
 
-statements:
-    statement statements
-    | /* empty */
-    ;
+statements: statement statements | ;
 
 statement:
-    KEYWORD_INT IDENTIFIER SYMBOL_ASSIGN expression SYMBOL_SEMICOLON
-    | KEYWORD_PRINTF '(' expression ')' SYMBOL_SEMICOLON
+    KEYWORD_INT IDENTIFIER '=' expression ';'
+    | selection_statement
+    | KEYWORD_PRINTF '(' STRING ')' ';'
     ;
 
-expression:
-    NUMBER
-    | IDENTIFIER
-    | expression SYMBOL_PLUS expression
-    | expression SYMBOL_MUL expression
+selection_statement:
+    KEYWORD_IF '(' condition ')' statement %prec LOWER_THAN_ELSE
+    | KEYWORD_IF '(' condition ')' statement KEYWORD_ELSE statement
     ;
+
+condition: expression OP_GE expression ;
+
+expression: NUMBER | IDENTIFIER ;
 %%`
   },
   {
@@ -150,22 +188,20 @@ expression:
     description: "The Semantic Analyzer ensures the program makes sense (type checking, scope validation).",
     details: [
       "Creates the Symbol Table to track variables and their types.",
-      "Verifies that variables are declared before being used.",
-      "Checks for type compatibility in assignments and expressions."
+      "Verifies that 'marks' is declared before being used in conditions.",
+      "Checks for type compatibility in relational operators (int >= int)."
     ],
     visualData: {
       symbolTable: [
-        { name: "base", type: "int", scope: "global/main", initialized: true },
-        { name: "total", type: "int", scope: "global/main", initialized: true }
+        { name: "marks", type: "int", scope: "global/main", initialized: true }
       ]
     },
     implementationCode: `/* Semantic Checker (Analyzer.cpp) */
 void SemanticAnalyzer::check(ASTNode* node) {
-  if (node->type == NODE_VAR_DECL) {
-    if (symbolTable.exists(node->name)) {
-      error("Redeclaration of " + node->name);
-    }
-    symbolTable.insert(node->name, node->varType);
+  if (node->type == NODE_IF) {
+    checkCondition(node->condition);
+    check(node->thenBlock);
+    if (node->elseBlock) check(node->elseBlock);
   } else if (node->type == NODE_IDENTIFIER) {
     if (!symbolTable.exists(node->name)) {
       error("Undefined variable: " + node->name);
@@ -178,32 +214,38 @@ void SemanticAnalyzer::check(ASTNode* node) {
     title: "Phase 4: Intermediate Code",
     description: "The AST is flattened into machine-independent Intermediate Representation (IR), often Three-Address Code.",
     details: [
-      "Breaks down complex expressions into simple 3-operand steps.",
-      "Introduces temporary variables (t1, t2) to hold intermediate results.",
-      "Makes the code ready for generic optimizations."
+      "Translates high-level control flow (if-else) into conditional jumps.",
+      "Introduces labels (L1, L2, L_END) for branch targets.",
+      "Maintains variable values in a simple flattened format."
     ],
     visualData: {
       ir: [
-        "t1 = 3 * 2",
-        "t2 = 5 + t1",
-        "base = t2",
-        "t3 = base + 10",
-        "total = t3",
-        "t4 = total - 4",
-        "total = t4",
-        "print total",
-        "t5 = base + total",
-        "print t5"
+        "marks = 75",
+        "if marks < 90 goto L1",
+        "print \"Grade A\"",
+        "goto L_END",
+        "L1: if marks < 75 goto L2",
+        "print \"Grade B\"",
+        "goto L_END",
+        "L2: if marks < 50 goto L3",
+        "print \"Grade C\"",
+        "goto L_END",
+        "L3: print \"Fail\"",
+        "L_END: halt"
       ]
     },
-    implementationCode: `// IR Generation (TAC)
+    implementationCode: `// IR Generation for Control Flow
 const generateIR = (node) => {
-  if (node.type === 'BinaryOp') {
-    const t = getTemp();
-    emit(\`\${t} = \${node.left} \${node.op} \${node.right}\`);
-    return t;
+  if (node.type === 'IfStatement') {
+    const L1 = getLabel();
+    const L_END = getLabel();
+    emit(\`if !\${node.test} goto \${L1}\`);
+    generateIR(node.consequent);
+    emit(\`goto \${L_END}\`);
+    emit(\`\${L1}:\`);
+    if (node.alternate) generateIR(node.alternate);
+    emit(\`\${L_END}:\`);
   }
-  return node.value;
 };`
   },
   {
@@ -211,75 +253,72 @@ const generateIR = (node) => {
     title: "Phase 5: Code Optimization",
     description: "The Optimizer improves the IR to make it faster or smaller without changing the output.",
     details: [
-      "Constant Folding: Performs math at compile time (5 + 6 = 11).",
-      "Constant Propagation: Replaces variables with their constant values.",
-      "Dead Code Removal: Eliminates steps that don't affect the result."
+      "Constant Folding: Evaluates 75 < 90 as True during compilation.",
+      "Dead Code Removal: Eliminates branches that will never be taken.",
+      "Jump Threading: Simplifies sequences of jumps."
     ],
     visualData: {
       before: [
-        "t1 = 3 * 2",
-        "t2 = 5 + t1",
-        "base = t2",
-        "t3 = base + 10",
-        "total = t3"
+        "marks = 75",
+        "if marks < 90 goto L1",
+        "print \"Grade A\"",
+        "goto L_END",
+        "L1: if marks < 75 goto L2"
       ],
       after: [
-        "base = 11 // (5 + 6)",
-        "total = 21 // (11 + 10)",
-        "total = 17 // (21 - 4)",
-        "print 17",
-        "print 28 // (11 + 17)"
+        "marks = 75",
+        "goto L1 // marks < 90 is True (75 < 90)",
+        "L1: goto L_PRINT_B // marks < 75 is False",
+        "L_PRINT_B: print \"Grade B\"",
+        "halt"
       ]
     },
-    implementationCode: `/* Target Code Gen (Emitter.cpp) */
-void CodeEmitter::emit(Instruction instr) {
-  switch(instr.type) {
-    case OP_PUSH:
-      buffer.write("PUSH %d", instr.value);
-      break;
-    case OP_STORE:
-      buffer.write("STORE [ebp-%d]", instr.offset);
-      break;
-    case OP_ADD:
-      buffer.write("ADD");
-      break;
-    case OP_HALT:
-      buffer.write("HALT");
-      break;
+    implementationCode: `/* Jump Optimization (Optimizer.cpp) */
+void Optimizer::optimizeJumps(vector<TAC>& code) {
+  for (auto& instr : code) {
+    if (instr.op == IF_GOTO && instr.cond.isConstant()) {
+      if (instr.cond.val) {
+        instr.op = GOTO;
+      } else {
+        instr.op = NOP; // Dead code
+      }
+    }
   }
 }`
   },
   {
     id: "target",
     title: "Phase 6: Target Code",
-    description: "The final phase translates IR into low-level machine instructions (Stack VM Opcodes).",
+    description: "The final phase translates IR into low-level machine instructions (x86-style Assembly).",
     details: [
-      "Maps variables to memory addresses or stack offsets.",
-      "Emits executable instructions like PUSH, ADD, STORE.",
-      "Final preparation for the target environment (VM)."
+      "Maps 'marks' to a specific memory location ([ebp-4]).",
+      "Uses registers (EAX) and flags for comparisons.",
+      "Implements selection logic using CMP, JL, and JMP instructions."
     ],
     visualData: {
       asm: [
-        "PUSH 5",
-        "PUSH 3",
-        "PUSH 2",
-        "MUL",
-        "ADD",
-        "STORE 0 // base",
-        "LOAD 0",
-        "PUSH 10",
-        "ADD",
-        "STORE 1 // total",
-        "LOAD 1",
-        "PUSH 4",
-        "SUB",
-        "STORE 1",
-        "LOAD 1",
-        "PRINT",
-        "LOAD 0",
-        "LOAD 1",
-        "ADD",
-        "PRINT",
+        "MOV [ebp-4], 75  ; marks = 75",
+        "CMP [ebp-4], 90",
+        "JL L1",
+        "PUSH offset str_A",
+        "CALL printf",
+        "JMP L_END",
+        "L1:",
+        "CMP [ebp-4], 75",
+        "JL L2",
+        "PUSH offset str_B",
+        "CALL printf",
+        "JMP L_END",
+        "L2:",
+        "CMP [ebp-4], 50",
+        "JL L3",
+        "PUSH offset str_C",
+        "CALL printf",
+        "JMP L_END",
+        "L3:",
+        "PUSH offset str_Fail",
+        "CALL printf",
+        "L_END:",
         "HALT"
       ]
     }

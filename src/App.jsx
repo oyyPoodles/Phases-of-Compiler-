@@ -118,31 +118,7 @@ int main() {
             transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
             className="stage-card"
           >
-            <button 
-              className="btn-impl-toggle" 
-              onClick={() => setShowImpl(!showImpl)}
-            >
-              {showImpl ? <ChevronRight size={16} style={{ transform: 'rotate(90deg)' }} /> : <Code size={16} />}
-              {showImpl ? 'Hide Implementation' : 'Show Implementation Code'}
-            </button>
 
-            <AnimatePresence>
-              {showImpl && (
-                <motion.div 
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: 'auto', opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  className="impl-view"
-                >
-                  <div className="impl-header">
-                    <TerminalIcon size={14} /> INTERNAL_ENGINE_LOG.js
-                  </div>
-                  <pre className="impl-code">
-                    {activeData.implementationCode}
-                  </pre>
-                </motion.div>
-              )}
-            </AnimatePresence>
 
             <div className="grid-layout">
               <div className="info-block">
@@ -194,11 +170,37 @@ int main() {
               </div>
 
               <div className="visual-container">
-                <PhaseVisualizer 
-                  phase={activeData} 
-                  sourceCode={sourceCode} 
-                  setSourceCode={setSourceCode} 
-                />
+                <div style={{ marginBottom: '2rem' }}>
+                  <div style={{ fontSize: '0.6rem', color: 'var(--primary)', marginBottom: '1rem', textTransform: 'uppercase', letterSpacing: '1px', opacity: 0.8 }}>
+                    Implementation Specification
+                  </div>
+                  <div className="impl-view" style={{ margin: 0 }}>
+                    <div className="impl-header">
+                      <TerminalIcon size={14} /> {activePhase.id.toUpperCase()}_LOGIC
+                    </div>
+                    <pre className="impl-code" style={{ maxHeight: '250px', overflowY: 'auto', display: 'flex', gap: '1.5rem' }}>
+                      <div style={{ opacity: 0.3, textAlign: 'right', userSelect: 'none' }}>
+                        {activeData.implementationCode?.split('\n').map((_, i) => (
+                          <div key={i}>{i + 1}</div>
+                        ))}
+                      </div>
+                      <div>
+                        {activeData.implementationCode}
+                      </div>
+                    </pre>
+                  </div>
+                </div>
+
+                <div>
+                  <div style={{ fontSize: '0.6rem', color: 'var(--primary)', marginBottom: '1rem', textTransform: 'uppercase', letterSpacing: '1px', opacity: 0.8 }}>
+                    Phase Result / Output
+                  </div>
+                  <PhaseVisualizer 
+                    phase={activeData} 
+                    sourceCode={sourceCode} 
+                    setSourceCode={setSourceCode} 
+                  />
+                </div>
               </div>
             </div>
           </motion.div>
